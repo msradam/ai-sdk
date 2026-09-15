@@ -6,7 +6,8 @@ path is `github.com/grafana/ai-sdk/ai-gateway`.
 
 This directory contains the ProviderWire V4 request contract, exact-pinned
 registered-client evidence, public model catalog, unary and streaming text HTTP
-runtimes, and the authenticated Anthropic and OpenAI-compatible service under
+runtimes, and the authenticated Anthropic, OpenAI Responses and OpenAI-compatible
+service under
 `cmd/grafana-ai-gateway`. Deployment assets and the Go Gateway client land in
 later work packages.
 
