@@ -8,6 +8,10 @@ import (
 // PipeUIMessageStreamToResponse writes a UIMessageChunk stream to an HTTP
 // response as Server-Sent Events. It sets the appropriate SSE headers and
 // terminates with a [DONE] sentinel.
+//
+// When a write fails, it returns at once and drains the rest of the stream in
+// the background, so the producer never blocks on a full buffer. Bind that
+// producer to the request context so a client disconnect ends it.
 func PipeUIMessageStreamToResponse(w http.ResponseWriter, stream <-chan UIMessageChunk) error {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -17,6 +21,15 @@ func PipeUIMessageStreamToResponse(w http.ResponseWriter, stream <-chan UIMessag
 	w.WriteHeader(http.StatusOK)
 
 	flusher, _ := w.(http.Flusher)
+
+	// Drain in the background on early return, so the producing goroutine never
+	// blocks on a full buffer and the handler still returns at once.
+	defer func() {
+		go func() {
+			for range stream { //nolint:revive // discard remaining chunks
+			}
+		}()
+	}()
 
 	for chunk := range stream {
 		event, err := FormatSSEEvent(chunk)
